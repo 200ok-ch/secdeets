@@ -1,0 +1,1 @@
+{:bbin/bin {secdeets {:main-opts ["-m" "secdeets"]}}}

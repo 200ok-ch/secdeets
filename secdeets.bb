@@ -3,7 +3,8 @@
 (ns secdeets
   (:require [shell-smith.core :as smith]
             [babashka.process :as process]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [cheshire.core :as json]))
 
 (def usage "
 secdeets

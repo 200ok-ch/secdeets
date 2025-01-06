@@ -1,0 +1,73 @@
+* secdeets
+
+A thin wrapper around keepassxc-cli to query security details in a
+more scriptable way.
+
+** Overview
+
+secdeets is a command-line tool written in Babashka that provides a
+convenient interface to interact with KeePassXC databases. It allows
+you to retrieve usernames, passwords, TOTP codes, and full entry
+details in a scriptable format.
+
+** Features
+
+- Retrieve specific entry details:
+  - Username
+  - Password
+  - TOTP codes
+  - Full entry information (as JSON)
+- Configurable through:
+  - Environment variables
+  - Configuration files
+  - Command-line arguments
+
+** Installation
+
+=bbin install io.github.200ok-ch/secdeets=
+
+*** Prerequisites
+
+- Babashka
+- KeePassXC CLI
+
+** Configuration
+
+You can configure secdeets in multiple ways:
+
+*** Environment Variables
+
+#+begin_src shell
+export SECDEETS_DB=~/secrets/db.kdbx
+export SECDEETS_PASSWORD_FILE=~/secrets/keepassxc
+#+end_src
+
+*** Configuration File (secdeets.yml)
+
+#+begin_src yaml
+---
+entry: 'The name of some entry in your db'
+#+end_src
+
+** Usage
+
+=secdeets <detail> [--db=<db>] [--password-file=<password-file>] [--entry=<entry>]=
+
+*** Available commands
+
+- username - Get entry username
+- password - Get entry password
+- totp - Get TOTP code
+- full - Get all details in JSON format
+
+*** Options
+
+- -d --db=<db> - Path to the KeePassXC database
+- -p --password-file=<password-file> - Path to password file
+- -e --entry=<entry> - Entry name in the database
+- -h --help - Show help
+- -v --version - Show version
+
+** Example
+
+=secdeets password --entry MyVPN=

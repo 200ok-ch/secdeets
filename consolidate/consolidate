@@ -1,0 +1,84 @@
+#!/usr/bin/env bb
+
+(ns consolidate.core
+  (:require [babashka.cli :as cli]
+            [clojure.java.io :as io]
+            [clojure.data.csv :as csv]
+            [shell-smith.core :as smith]))
+
+;; Read CSV file into memory
+(defn read-csv [file]
+  (with-open [reader (io/reader file)]
+    (doall (csv/read-csv reader))))
+
+;; Write data to CSV
+(defn write-csv [data]
+  (let [writer (java.io.StringWriter.)]
+    (csv/write-csv writer data)
+    (str writer)))
+
+;; Extract primary key (first two columns) from a row
+(defn get-primary-key [row]
+  [(first row) (second row)])
+
+;; Check if rows differ in any column beyond the first two
+(defn rows-differ? [row1 row2]
+  (not= (drop 2 row1) (drop 2 row2)))
+
+;; Append suffix to the second column value
+(defn append-to-second-column [row suffix]
+  (assoc row 1 (str (nth row 1) suffix)))
+
+;; Main consolidation function
+(defn consolidate-csvs [file-a file-b]
+  (let [data-a (read-csv file-a)
+        data-b (read-csv file-b)
+        headers (first data-a)
+        rows-a (rest data-a)
+        rows-b (rest data-b)
+
+        ;; Create maps for easier lookup by primary key
+        map-a (into {} (map (fn [row] [(get-primary-key row) row]) rows-a))
+        map-b (into {} (map (fn [row] [(get-primary-key row) row]) rows-b))
+
+        ;; All unique primary keys from both files
+        all-keys (distinct (concat (keys map-a) (keys map-b)))
+
+        ;; Process each key according to the rules
+        result-rows (mapcat (fn [pk]
+                              (let [row-a (get map-a pk)
+                                    row-b (get map-b pk)]
+                                (cond
+                                  ;; Key only in A
+                                  (nil? row-b) [row-a]
+
+                                  ;; Key only in B
+                                  (nil? row-a) [row-b]
+
+                                  ;; Key in both, check for differences
+                                  (rows-differ? row-a row-b)
+                                  [(append-to-second-column row-a " A")
+                                   (append-to-second-column row-b " B")]
+
+                                  ;; Key in both, no differences
+                                  :else [row-a])))
+                            all-keys)]
+
+    ;; Write result to output file
+    (write-csv (cons headers result-rows))))
+
+(def usage "Usage: consolidate <csv1> <csv2>
+
+Example:
+
+./consolidate russell.csv demiurg.csv > consolidated.csv")
+
+(def config (smith/config usage))
+
+;; Main entry point
+(defn -main [& args]
+  (let [{:keys [csv1 csv2]} config]
+    (println (consolidate-csvs csv1 csv2))))
+
+(when (= *file* (System/getProperty "babashka.file"))
+  (apply -main *command-line-args*))

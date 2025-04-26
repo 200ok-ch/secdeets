@@ -1,0 +1,3 @@
+{:bbin/bin {consolidate {:main-opts ["-m" "consolidate"]}}
+ :deps {io.github.200ok-ch/shell-smith
+        {:local/root "../src/os/shell-smith"}}}
